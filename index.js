@@ -30,6 +30,22 @@ async function run() {
       .collection("coffees");
     const userCollection = client.db("coffee-EspressoDB").collection("users");
 
+    // ----------------
+    // Routes
+    app.get("/coffees", (req, res) => {
+      res.json([
+        { id: 1, name: "Espresso" },
+        { id: 2, name: "Latte" },
+      ]);
+    });
+
+    app.get("/users", (req, res) => {
+      res.json([
+        { id: 1, name: "John Doe" },
+        { id: 2, name: "Jane Doe" },
+      ]);
+    });
+
     // get all coffee
     app.get("/coffees", async (req, res) => {
       const result = await coffeeCollection.find().toArray();
