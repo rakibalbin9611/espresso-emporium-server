@@ -2,16 +2,17 @@ const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+
 const app = express();
-const port = process.env.PORT || 3000;
 
 // middleware
 app.use(cors());
 app.use(express.json());
 
+// MongoDB URI
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.f78kgfp.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
-// Create a MongoClient with a MongoClientOptions object to set the Stable API version
+// MongoDB client
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
@@ -22,7 +23,6 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-    // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
 
     const coffeeCollection = client
@@ -30,13 +30,18 @@ async function run() {
       .collection("coffees");
     const userCollection = client.db("coffee-EspressoDB").collection("users");
 
-    // get all coffee
+    // Root route
+    app.get("/", (req, res) => {
+      res.send("☕ Coffee Espresso server is running!");
+    });
+
+    // Get all coffees
     app.get("/coffees", async (req, res) => {
       const result = await coffeeCollection.find().toArray();
       res.send(result);
     });
 
-    // get single coffee
+    // Get single coffee
     app.get("/coffees/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
@@ -44,93 +49,66 @@ async function run() {
       res.send(result);
     });
 
-    // create coffee
+    // Create coffee
     app.post("/coffees", async (req, res) => {
       const newCoffee = req.body;
-      console.log(newCoffee);
       const result = await coffeeCollection.insertOne(newCoffee);
       res.send(result);
     });
 
-    // update coffee
+    // Update coffee
     app.put("/coffees/:id", async (req, res) => {
       const id = req.params.id;
-      const filter = { _id: new ObjectId(id) };
-      const options = { upsert: true };
       const updatedCoffee = req.body;
-      const updatedDoc = {
-        $set: updatedCoffee,
-      };
-
       const result = await coffeeCollection.updateOne(
-        filter,
-        updatedDoc,
-        options
+        { _id: new ObjectId(id) },
+        { $set: updatedCoffee }
       );
       res.send(result);
     });
 
+    // Delete coffee
     app.delete("/coffees/:id", async (req, res) => {
       const id = req.params.id;
-      const query = { _id: new ObjectId(id) }; // _id always be an object
-      const result = await coffeeCollection.deleteOne(query);
+      const result = await coffeeCollection.deleteOne({
+        _id: new ObjectId(id),
+      });
       res.send(result);
     });
 
-    // users APIs
-
-    // get users
+    // Users routes
     app.get("/users", async (req, res) => {
       const result = await userCollection.find().toArray();
       res.send(result);
     });
-    // create users
+
     app.post("/users", async (req, res) => {
       const newUser = req.body;
       const result = await userCollection.insertOne(newUser);
       res.send(result);
     });
 
-    // // update user partially (PATCH)
     app.patch("/users", async (req, res) => {
       const { email, lastSignInTime } = req.body;
-      const filter = { email: email };
-      const updatedDoc = {
-        $set: {
-          lastSignInTime: lastSignInTime,
-        },
-      };
-      const result = await userCollection.updateOne(filter, updatedDoc);
+      const result = await userCollection.updateOne(
+        { email },
+        { $set: { lastSignInTime } }
+      );
       res.send(result);
     });
 
-    // Delete User
     app.delete("/users/:id", async (req, res) => {
       const id = req.params.id;
-      const query = { _id: new ObjectId(id) };
-      const result = await userCollection.deleteOne(query);
+      const result = await userCollection.deleteOne({ _id: new ObjectId(id) });
       res.send(result);
     });
 
-    // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
-    console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!"
-    );
-  } finally {
-    // Ensures that the client will close when you finish/error
-    // await client.close();
+    console.log("✅ MongoDB connected successfully");
+  } catch (err) {
+    console.error("MongoDB connection failed:", err);
   }
 }
-run().catch(console.dir);
+run();
 
-app.get("/", (req, res) => {
-  res.send("Coffee Espresso server is running");
-});
-
-// ===== Default Route =====
-app.get("/", (req, res) => {
-  res.send("☕ Coffee Espresso server is running successfully!");
-});
-// ===== Export App for Vercel =====
-export default app;
+// Export for Vercel
+module.exports = app;
