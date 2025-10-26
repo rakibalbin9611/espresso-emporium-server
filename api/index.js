@@ -30,22 +30,6 @@ async function run() {
       .collection("coffees");
     const userCollection = client.db("coffee-EspressoDB").collection("users");
 
-    // ----------------
-    // Routes
-    app.get("/coffees", (req, res) => {
-      res.json([
-        { id: 1, name: "Espresso" },
-        { id: 2, name: "Latte" },
-      ]);
-    });
-
-    app.get("/users", (req, res) => {
-      res.json([
-        { id: 1, name: "John Doe" },
-        { id: 2, name: "Jane Doe" },
-      ]);
-    });
-
     // get all coffee
     app.get("/coffees", async (req, res) => {
       const result = await coffeeCollection.find().toArray();
@@ -144,6 +128,9 @@ app.get("/", (req, res) => {
   res.send("Coffee Espresso server is running");
 });
 
-app.listen(port, () => {
-  console.log(`Coffee Espresso server is running on port: ${port}`);
+// ===== Default Route =====
+app.get("/", (req, res) => {
+  res.send("☕ Coffee Espresso server is running successfully!");
 });
+// ===== Export App for Vercel =====
+export default app;
